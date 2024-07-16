@@ -9,6 +9,7 @@ from esphome.const import (
     CONF_WARM_WHITE_COLOR_TEMPERATURE,
     CONF_REVERSED,
     CONF_MIN_BRIGHTNESS, # New in 2023.5
+    CONF_GROUP,
 )
 
 AUTO_LOAD = ["esp32_ble"]
@@ -28,6 +29,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_CONSTANT_BRIGHTNESS, default=False): cv.boolean,
             cv.Optional(CONF_REVERSED, default=False): cv.boolean,
             cv.Optional(CONF_MIN_BRIGHTNESS, default=0x7): cv.hex_uint8_t,
+            cv.Optional(CONF_GROUP, default=0x0): cv.hex_uint8_t,
         }
     ),
     cv.has_none_or_all_keys(
@@ -56,3 +58,4 @@ async def to_code(config):
     cg.add(var.set_reversed(config[CONF_REVERSED]))
     cg.add(var.set_min_brightness(config[CONF_MIN_BRIGHTNESS]))
     cg.add(var.set_tx_duration(config[CONF_DURATION]))
+    cg.add(var.set_group_id(config[CONF_GROUP]))

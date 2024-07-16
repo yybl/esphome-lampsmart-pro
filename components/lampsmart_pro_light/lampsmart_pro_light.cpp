@@ -118,7 +118,7 @@ namespace esphome
       return crc;
     }
 
-    char *buildPacket(char command, char mControl0, char mControl1, char arg1, char arg2)
+    char *buildPacket(char command, char mControl0, char mControl1, char arg1, char arg2, uint8_t groupId)
     {
       char msgBase[25];
       static char packet[32];
@@ -128,7 +128,7 @@ namespace esphome
       }
       msgBase[11] = command;
       msgBase[12] = mControl0;
-      msgBase[13] = mControl1;
+      msgBase[13] = (mControl1 & 240) | (groupId & 15);
       msgBase[14] = arg1;
       msgBase[15] = arg2;
       msgBase[17] = rand() & 255;
@@ -259,7 +259,7 @@ namespace esphome
     void LampSmartProLight::send_packet(uint16_t cmd, uint8_t arg1, uint8_t arg2)
     {
       char *hostId = getHostDeviceIdentifier();
-      uint8_t *packet = (uint8_t *)buildPacket(cmd, hostId[0], hostId[1], arg1, arg2);
+      uint8_t *packet = (uint8_t *)buildPacket(cmd, hostId[0], hostId[1], arg1, arg2, group_id_);
 
       // Skip first byte (BLE packet size indicator)
       ESP_ERROR_CHECK_WITHOUT_ABORT(esp_ble_gap_config_adv_data_raw(&packet[1], 31));
