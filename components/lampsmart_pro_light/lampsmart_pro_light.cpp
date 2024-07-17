@@ -6,6 +6,7 @@
 
 #include <esp_gap_ble_api.h>
 #include <esp_gatts_api.h>
+#include <wifi.h>
 
 namespace esphome
 {
@@ -14,8 +15,8 @@ namespace esphome
 
     void LampSmartProLight::setup()
     {
-      register_service(&LampSmartProLight::on_pair, this->get_object_id());
-      register_service(&LampSmartProLight::on_unpair, this->get_object_id());
+      register_service(&LampSmartProLight::on_pair, "pair_" + light_state_->get_object_id());
+      register_service(&LampSmartProLight::on_unpair, "unpair_" + light_state_->get_object_id());
     }
 
     light::LightTraits LampSmartProLight::get_traits()
@@ -29,12 +30,14 @@ namespace esphome
 
     char *LampSmartProLight::getHostDeviceIdentifier()
     {
-      uint32_t hash = this->get_object_id_hash();
-      int crc = CRC16((char *)&hash, 4, 0);
+      uint8_t hash[6];
+      esp_wifi_get_mac(WIFI_IF_STA, hash);
+      int crc = CRC16((char *)&hash, 6, 0);
 
       static char hostId[2];
       hostId[0] = (crc >> 8) & 255;
       hostId[1] = crc & 255;
+      ESP_LOGD(TAG, "LampSmartProLight::getHostDeviceIdentifier called!hostId[0]: %02x, hostId[1]: %02x", hostId[0], hostId[1]);
       return hostId;
     }
 
@@ -43,39 +46,40 @@ namespace esphome
       float cwf, wwf;
       state->current_values_as_cwww(&cwf, &wwf, this->constant_brightness_);
 
-      if (!cwf && !wwf)
-      {
-        send_packet(CMD_TURN_OFF, 0, 0);
-        _is_off = true;
+      ESP_LOGD(TAG, "write state: remote: %s, current: %s", ONOFF(state->remote_values.is_on()), ONOFF(state->current_values.is_on()));
+      if (state->current_values.is_on()) {
+        if (!_is_off.has_value() || _is_off.value() != state->current_values.is_on()) {
+          send_packet(CMD_TURN_ON, 0, 0);
+          ESP_LOGD(TAG, "write state: send turn on");
+        }
+        _is_off = state->current_values.is_on();
+        uint8_t cwi = (uint8_t)(0xff * cwf);
+        uint8_t wwi = (uint8_t)(0xff * wwf);
 
+        if ((cwi < min_brightness_) && (wwi < min_brightness_))
+        {
+          if (cwf > 0.000001)
+          {
+            cwi = min_brightness_;
+          }
+
+          if (wwf > 0.000001)
+          {
+            wwi = min_brightness_;
+          }
+        }
+
+        ESP_LOGD(TAG, "LampSmartProLight::write_state called! Requested cw: %d, ww: %d", cwi, wwi);
+
+        send_packet(CMD_DIM, cwi, wwi);
+      } else {
+        if (!_is_off.has_value() || _is_off.value() != state->current_values.is_on()) {
+            send_packet(CMD_TURN_OFF, 0, 0);
+            ESP_LOGD(TAG, "write state: send turn off");
+        }
+        _is_off = state->current_values.is_on();
         return;
       }
-
-      uint8_t cwi = (uint8_t)(0xff * cwf);
-      uint8_t wwi = (uint8_t)(0xff * wwf);
-
-      if ((cwi < min_brightness_) && (wwi < min_brightness_))
-      {
-        if (cwf > 0.000001)
-        {
-          cwi = min_brightness_;
-        }
-
-        if (wwf > 0.000001)
-        {
-          wwi = min_brightness_;
-        }
-      }
-
-      ESP_LOGD(TAG, "LampSmartProLight::write_state called! Requested cw: %d, ww: %d", cwi, wwi);
-
-      if (_is_off)
-      {
-        send_packet(CMD_TURN_ON, 0, 0);
-        _is_off = false;
-      }
-
-      send_packet(CMD_DIM, cwi, wwi);
     }
 
     void LampSmartProLight::dump_config()

@@ -6,6 +6,7 @@
 
 #include <esp_gap_ble_api.h>
 #include <esp_gatts_api.h>
+#include <wifi.h>
 
 namespace esphome
 {
@@ -29,12 +30,14 @@ namespace esphome
 
     char *LampSmartProFan::getHostDeviceIdentifier()
     {
-      uint32_t hash = this->get_object_id_hash();
-      int crc = CRC16((char *)&hash, 4, 0);
+      uint8_t hash[6];
+      esp_wifi_get_mac(WIFI_IF_STA, hash);
+      int crc = CRC16((char *)&hash, 6, 0);
 
       static char hostId[2];
       hostId[0] = (crc >> 8) & 255;
       hostId[1] = crc & 255;
+      ESP_LOGD(TAG, "LampSmartProFan::getHostDeviceIdentifier called!hostId[0]: %02x, hostId[1]: %02x", hostId[0], hostId[1]);
       return hostId;
     }
 
@@ -69,17 +72,34 @@ namespace esphome
     void LampSmartProFan::control(const fan::FanCall &call) {
       if (call.get_state().has_value()) {
         this->state = *call.get_state();
-      }
-      if (call.get_oscillating().has_value()) {
-        this->oscillating = *call.get_oscillating();
-      }
-      if (call.get_speed().has_value()) {
-        this->speed = *call.get_speed();
-        send_packet(CMD_GEAR, this->speed, 0);
-      }
-      if (call.get_direction().has_value()) {
-        this->direction = *call.get_direction();
-        send_packet(CMD_GEAR, static_cast<uint8_t>(this->direction), 0);
+        if (this->state) {
+          // when fan on with speed or direction
+          if (call.get_speed().has_value()) {
+            this->speed = *call.get_speed();
+          } else {
+            this->speed = *call.get_speed();
+          }
+          send_packet(CMD_GEAR, this->speed, 0);
+          ESP_LOGD(TAG, "LampSmartProFan::on called!Speed %d", this->speed);
+        } else {
+          send_packet(CMD_GEAR, 0, 0);
+          ESP_LOGD(TAG, "LampSmartProFan::off called!");
+        }
+      } else {
+        // when change speed or direction
+        if (call.get_oscillating().has_value()) {
+          this->oscillating = *call.get_oscillating();
+        }
+        if (call.get_speed().has_value()) {
+          this->speed = *call.get_speed();
+          send_packet(CMD_GEAR, this->speed, 0);
+          ESP_LOGD(TAG, "LampSmartProFan::gear called!Speed %d", this->speed);
+        }
+        if (call.get_direction().has_value()) {
+          this->direction = *call.get_direction();
+          send_packet(CMD_DIRECTION, static_cast<uint8_t>(this->direction), 0);
+          ESP_LOGD(TAG, "LampSmartProFan::direction called!Direction %d", static_cast<uint8_t>(this->direction));
+        }
       }
 
       this->publish_state();

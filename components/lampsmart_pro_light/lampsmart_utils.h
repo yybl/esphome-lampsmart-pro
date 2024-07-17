@@ -11,6 +11,8 @@ namespace esphome
   namespace lampsmartpro
   {
 
+    static const char *TAG = "lampsmartpro";
+
     char *bitReverse(char *bArr);
 
     char *bleWhitening(char *bArr);

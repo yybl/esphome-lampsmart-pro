@@ -10,7 +10,6 @@ namespace esphome
 {
   namespace lampsmartpro
   {
-    static const char *TAG = "lampsmartpro";
 
     static const char PACKET_BASE[32] = {
         0x1F, 0x02, 0x01, 0x01, 0x1B, 0x03, 0x71, 0x0F,
@@ -129,6 +128,7 @@ namespace esphome
       msgBase[11] = command;
       msgBase[12] = mControl0;
       msgBase[13] = (mControl1 & 240) | (groupId & 15);
+      ESP_LOGD(TAG, "buildPacket called!mControl0: %02x, mControl1: %02x", msgBase[12], msgBase[13]);
       msgBase[14] = arg1;
       msgBase[15] = arg2;
       msgBase[17] = rand() & 255;
