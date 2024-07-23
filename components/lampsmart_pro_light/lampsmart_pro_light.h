@@ -43,7 +43,7 @@ namespace esphome
       bool constant_brightness_;
       bool reversed_;
       uint8_t min_brightness_;
-      bool _is_off;
+      optional<bool> _is_off{};
       uint8_t tx_count_;
       uint32_t tx_duration_;
       uint8_t group_id_;
