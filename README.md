@@ -21,14 +21,14 @@ external_components:
 
 light:
   - platform: lampsmart_pro_light
-    name: Kitchen Light
-    duration: 1000
-    group: 0
+    name: Bed Room Light
+    group: 1
     default_transition_length: 0s
+    duration: 500
+
 fan:
   - platform: lampsmart_pro_light
-    name: Kitchen Fan
-    duration: 1000
-    group: 0
-    default_transition_length: 0s
+    group: 1
+    name: Bed Room Fan
+    duration: 500
 ```
