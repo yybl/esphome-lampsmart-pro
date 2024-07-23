@@ -1,9 +1,16 @@
 external_components:
   # shorthand
-  source: github://StevenReitsma/esphome-lampsmart-pro
+  source: github://zt8989/esphome-lampsmart-pro
 
 light:
   - platform: lampsmart_pro_light
     name: Kitchen Light
     duration: 1000
+    group: 0
+    default_transition_length: 0s
+fan:
+  - platform: lampsmart_pro_light
+    name: Kitchen Fan
+    duration: 1000
+    group: 0
     default_transition_length: 0s
