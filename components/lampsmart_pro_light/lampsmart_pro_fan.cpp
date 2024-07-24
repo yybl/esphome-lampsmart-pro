@@ -6,7 +6,7 @@
 
 #include <esp_gap_ble_api.h>
 #include <esp_gatts_api.h>
-#ifdef USE_WIFI
+#ifdef USE_ESP32_FRAMEWORK_ARDUINO
 #include <wifi.h>
 #endif
 
@@ -32,7 +32,7 @@ namespace esphome
 
     char *LampSmartProFan::getHostDeviceIdentifier()
     {
-      #ifdef USE_WIFI
+      #ifdef USE_ESP32_FRAMEWORK_ARDUINO
       uint8_t hash[6];
       esp_wifi_get_mac(WIFI_IF_STA, hash);
       int crc = CRC16((char *)&hash, 6, 0);
