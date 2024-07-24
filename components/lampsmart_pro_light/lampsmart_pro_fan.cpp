@@ -6,7 +6,9 @@
 
 #include <esp_gap_ble_api.h>
 #include <esp_gatts_api.h>
+#ifdef USE_WIFI
 #include <wifi.h>
+#endif
 
 namespace esphome
 {
@@ -30,9 +32,14 @@ namespace esphome
 
     char *LampSmartProFan::getHostDeviceIdentifier()
     {
+      #ifdef USE_WIFI
       uint8_t hash[6];
       esp_wifi_get_mac(WIFI_IF_STA, hash);
       int crc = CRC16((char *)&hash, 6, 0);
+      #else
+      uint32_t hash = light_state_ ? light_state_->get_object_id_hash() : 0xcafebabe;
+      int crc = CRC16((char *)&hash, 4, 0);
+      #endif
 
       static char hostId[2];
       hostId[0] = (crc >> 8) & 255;
